@@ -143,8 +143,8 @@ package Boxflex.Flex with SPARK_Mode is
    --    6. Align / Self along the cross axis, Lines across lines,
    --    7. write positions.
    --
-   --  Implemented so far: steps 1, 3 (grow only), 4, 6 (single line)
-   --  and 7. Still missing: shrink, wrap, align-content and
+   --  Implemented so far: steps 1, 3 (grow only), 4, 5 and 6 (single
+   --  line) and 7. Still missing: shrink, wrap, align-content and
    --  reversed directions.
 
    ---------------------------------------------------------------------
