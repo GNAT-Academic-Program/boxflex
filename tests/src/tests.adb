@@ -1,9 +1,6 @@
 --  Unit tests. Plain Ada, no framework: each Check prints PASS/FAIL
 --  and the program exits non-zero if anything failed. Add a test for
 --  every behaviour you implement; CI runs this on every push.
---
---  Tests marked "pending" document the expected result once
---  Boxflex.Layout_Plain.Compute is implemented. Un-comment them as you go.
 
 with Ada.Command_Line;
 with Ada.Text_IO;      use Ada.Text_IO;
@@ -236,11 +233,6 @@ procedure Tests is
          Check ("justify: space-around with one item centers it",
                 J1 (1).Pos_Main = 30.0);
       end;
-
-      --  pending, once grow is implemented:
-      --  It (1).Grow := 1.0; It (2).Grow := 1.0; It (2).Max_Main := Length'Last;
-      --  Resolve (C, It);
-      --  Check ("grow splits free space", It (1).Main = 72.5 and It (2).Main = 122.5);
    end Test_Flex;
 
    ---------------------------------------------------------------------
@@ -455,7 +447,7 @@ procedure Tests is
              abs (2 * To_Steps (A (1).Pos_Cross) - Free) < 2);
    end Test_Center_Rounding;
 
-      procedure Test_Edge_Cases is
+   procedure Test_Edge_Cases is
       use Boxflex.Flex;
    begin
       --  No items at all: Resolve must simply do nothing.
