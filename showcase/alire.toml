@@ -11,6 +11,8 @@ project-files = ["boxflex_showcase.gpr"]
 
 [[depends-on]]
 boxflex = "*"
+tuibox = "*"
 
 [[pins]]
 boxflex = { path = ".." }
+tuibox = { path = "3rd/tuibox" }

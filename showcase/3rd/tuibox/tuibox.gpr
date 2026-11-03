@@ -1,0 +1,23 @@
+library project Tuibox is
+
+   for Languages use ("Ada", "C");
+
+   for Library_Name use "tuibox";
+   for Library_Kind use "static";
+
+   for Source_Dirs use ("src", "vendor");
+   for Object_Dir use "obj";
+   for Library_Dir use "lib";
+   for Create_Missing_Dirs use "True";
+
+   package Compiler is
+      for Default_Switches ("Ada") use
+        ("-gnat2022", "-gnata", "-gnatwa", "-gnatwe", "-gnatVa",
+         "-gnatyg", "-gnatyM100", "-g", "-O1");
+      --  gnu17: tuibox.h calls through void (*)(), which C23 reads as
+      --  "no arguments". -fexceptions: Ada exceptions raised in callbacks
+      --  cross the C frames on their way out.
+      for Default_Switches ("C") use ("-std=gnu17", "-fexceptions", "-g", "-O1");
+   end Compiler;
+
+end Tuibox;
