@@ -195,13 +195,89 @@ package body Boxflex.Flex with SPARK_Mode is
       return To_Units (C.Main) - Used;
    end Main_Free;
 
+   -----------------------
+   -- Distribute_Shrink --
+   -----------------------
+
+   procedure Distribute_Shrink (C : Container; Items : in out Item_Array) is
+      Limit  : constant Units := 2 ** 22;
+      --  Weights are scaled below this, so Need * weight fits in Units.
+      Frozen : array (Items'Range) of Boolean;
+      Free, Need, Total, Scale, Cut, Given : Units;
+      Violated : Boolean;
+
+      function Weight (I : Item) return Units is
+        (Grow_Units (I.Shrink) * To_Units (I.Main));
+      --  Scaled shrink factor: Shrink times the item's size (CSS 9.7).
+   begin
+      --  Items that cannot shrink are frozen from the start.
+      for K in Items'Range loop
+         Frozen (K) := Items (K).Shrink = 0.0
+                       or else Items (K).Main <= Items (K).Min_Main;
+      end loop;
+
+      --  Each round either finishes or freezes at least one more item,
+      --  so Items'Length rounds are always enough.
+      for Round in Items'Range loop
+         Free := Main_Free (C, Items);
+         exit when Free >= 0;
+         Need := -Free;
+
+         Total := 0;
+         for K in Items'Range loop
+            if not Frozen (K) then
+               Total := Total + Weight (Items (K));
+            end if;
+         end loop;
+         exit when Total = 0;
+
+         Scale := 1;
+         while Total / Scale >= Limit loop
+            Scale := Scale * 2;
+         end loop;
+
+         --  Would any item go below its minimum? Freeze those at the min.
+         Violated := False;
+         for K in Items'Range loop
+            if not Frozen (K) then
+               Cut := Need * (Weight (Items (K)) / Scale) / (Total / Scale);
+               if To_Units (Items (K).Main) - Cut < To_Units (Items (K).Min_Main) then
+                  Items (K).Main := Items (K).Min_Main;
+                  Frozen (K) := True;
+                  Violated := True;
+               end if;
+            end if;
+         end loop;
+
+         if not Violated then
+            Given := 0;
+            for K in Items'Range loop
+               if not Frozen (K) then
+                  Cut := Need * (Weight (Items (K)) / Scale) / (Total / Scale);
+                  Items (K).Main := To_Length (To_Units (Items (K).Main) - Cut);
+                  Given := Given + Cut;
+               end if;
+            end loop;
+            --  Rounding left a few steps: take them one at a time.
+            for K in Items'Range loop
+               exit when Given >= Need;
+               if not Frozen (K) and then Items (K).Main > Items (K).Min_Main then
+                  Items (K).Main := To_Length (To_Units (Items (K).Main) - 1);
+                  Given := Given + 1;
+               end if;
+            end loop;
+            exit;
+         end if;
+      end loop;
+   end Distribute_Shrink;
+
    -------------
    -- Resolve --
    -------------
 
-   --  Steps 1, 3 (grow only), 4 (stretch), 5 (justify, single line),
-   --  6 (align, single line) and 7.
-   --  Still missing: shrink, wrap, reversed directions.
+   --  Steps 1, 3 (grow and shrink, single line), 4 (stretch),
+   --  5 (justify, single line), 6 (align, single line) and 7.
+   --  Still missing: wrap, reversed directions.
 
    procedure Resolve (C : Container; Items : in out Item_Array) is
       Cursor : Units := 0;
@@ -224,9 +300,11 @@ package body Boxflex.Flex with SPARK_Mode is
             Clamp (Items (K).Content_Cross, Items (K).Min_Cross, Items (K).Max_Cross);
       end loop;
 
-      --   Step 3: Share free space by Grow (single line only for now)
+      --   Step 3: Share free space by Grow, or overflow by Shrink
+      --   (single line only for now)
       if C.Wrap = No_Wrap then
          Distribute_Grow (C, Items);
+         Distribute_Shrink (C, Items);
       end if;
 
       --  Step 4: Stretch. No declared cross size + Stretch = fill the line.

@@ -471,17 +471,17 @@ procedure Tests is
       end;
 
       --  Items already overflow the line: there is no free space, so
-      --  grow changes nothing (shrink is not implemented yet).
+      --  grow changes nothing, and shrink cuts 30 px from each.
       declare
          O : Item_Array (1 .. 2) :=
            [others => (Basis => 80.0, Basis_Definite => True, Grow => 1.0,
                        others => <>)];
       begin
          Resolve ((Main => 100.0, Cross => 10.0, others => <>), O);
-         Check ("edge: overflowing items do not grow",
-                O (1).Main = 80.0 and then O (2).Main = 80.0);
-         Check ("edge: overflowing item is placed past the end",
-                O (2).Pos_Main = 80.0);
+         Check ("edge: overflowing items shrink instead of growing",
+                O (1).Main = 50.0 and then O (2).Main = 50.0);
+         Check ("edge: shrunk items fill the line exactly",
+                O (2).Pos_Main = 50.0);
       end;
 
       --  A zero-size container: growers stay at 0.
@@ -556,6 +556,26 @@ procedure Tests is
              To_Steps (J (2).Pos_Main) = 2 * Space + To_Steps (50.0));
    end Test_Justify_Rounding;
 
+   procedure Test_Shrink_Rounding is
+      use Boxflex.Flex;
+      --  Three 100 px items in 200 px: 100 px too much over 3 equal
+      --  weights is 33.33 px each, not a whole number of steps. Each cut
+      --  rounds down, and the leftover step comes off the first item.
+      K    : Item_Array (1 .. 3) :=
+        [others => (Basis => 100.0, Basis_Definite => True, others => <>)];
+      Need : constant Steps := To_Steps (100.0);
+      Cut  : constant Steps := Need / 3;
+   begin
+      Resolve ((Main => 200.0, Cross => 10.0, others => <>), K);
+      Check ("shrink: cuts round down, leftover step from the first item",
+             To_Steps (K (1).Main) = To_Steps (100.0) - Cut - 1
+             and then To_Steps (K (2).Main) = To_Steps (100.0) - Cut
+             and then To_Steps (K (3).Main) = To_Steps (100.0) - Cut);
+      Check ("shrink: rounded line is exactly full",
+             To_Steps (K (1).Main) + To_Steps (K (2).Main)
+             + To_Steps (K (3).Main) = To_Steps (200.0));
+   end Test_Shrink_Rounding;
+
 begin
    Test_Geometry;
    Test_Tree;
@@ -565,6 +585,7 @@ begin
    Test_Center_Rounding;
    Test_Edge_Cases;
    Test_Justify_Rounding;
+   Test_Shrink_Rounding;
 
    New_Line;
    if Failures = 0 then

@@ -143,9 +143,8 @@ package Boxflex.Flex with SPARK_Mode is
    --    6. Align / Self along the cross axis, Lines across lines,
    --    7. write positions.
    --
-   --  Implemented so far: steps 1, 3 (grow only), 4, 5 and 6 (single
-   --  line) and 7. Still missing: shrink, wrap, align-content and
-   --  reversed directions.
+   --  Implemented so far: steps 1, 3, 4, 5 and 6 (single line) and 7.
+   --  Still missing: wrap, align-content and reversed directions.
 
    ---------------------------------------------------------------------
    --  Pieces, exposed so they can be tested and proved one at a time
@@ -194,5 +193,13 @@ package Boxflex.Flex with SPARK_Mode is
    --  hands out the leftover 1/256 px units one at a time, first item
    --  first, so the line is filled exactly. Does nothing when there is no
    --  free space or no item has Grow > 0. Max_Main is not applied yet.
+
+   procedure Distribute_Shrink (C : Container; Items : in out Item_Array)
+     with Pre => Items'Length <= Max_Nodes;
+   --  Step 3, negative free space, for a single line. When the items
+   --  overflow C.Main, each one gives up overflow * (Shrink * Main) /
+   --  (sum of Shrink * Main). An item that would go below Min_Main is
+   --  frozen at Min_Main and the rest is shared again. Leftover 1/256 px
+   --  steps come off one at a time, first item first.
 
 end Boxflex.Flex;
