@@ -77,7 +77,7 @@ begin
    S.Align     := Center;
    Insert (T, Root, S, Toolbar);
 
-   for I in 1 .. 3 loop
+   for I in 1 .. 30 loop
       S := Default_Style;
       S.Width  := Px (80.0);
       S.Height := Px (32.0);

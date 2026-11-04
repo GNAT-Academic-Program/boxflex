@@ -104,14 +104,15 @@ the point of fixed point and no heap.
 
 ## Build
 
-Three [Alire](https://alire.ada.dev) crates, one per directory. The
+Four [Alire](https://alire.ada.dev) crates, one per directory. The
 showcase and the tests pin the library by path, so they always build
 against the code in your checkout, never a released version.
 
 ```
-boxflex/            crate boxflex           the library
-boxflex/showcase/   crate boxflex_showcase  depends on boxflex, pinned to ..
-boxflex/tests/      crate boxflex_tests     depends on boxflex, pinned to ..
+boxflex/                     crate boxflex           the library
+boxflex/showcase/            crate boxflex_showcase  depends on boxflex and tuibox, pinned by path
+boxflex/showcase/3rd/tuibox/ crate tuibox            Ada binding to a C TUI library
+boxflex/tests/               crate boxflex_tests     depends on boxflex, pinned to ..
 ```
 
 Library:
@@ -126,6 +127,15 @@ Showcase (writes `showcase.svg` in `showcase/`):
 cd showcase
 alr build
 alr run
+```
+
+The same build also makes two programs that draw on the terminal through
+tuibox. Hover a section for its rect, `q` quits. Sections with no area are
+not drawn; the status line names them.
+
+```
+./bin/showcase_tuibox   the showcase itself: 800x600, scaled to fit, prints the rects on exit
+./bin/showcase_tui      the same UI sized in cells, laid out again on every terminal resize
 ```
 
 Tests (exit code is non-zero on any failure):

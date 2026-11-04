@@ -1,0 +1,10 @@
+name = "tuibox"
+description = "Ada binding to tuibox, a small mouse-aware TUI library in one C header"
+version = "0.1.0-dev"
+authors = ["Olivier Henley"]
+maintainers = ["Olivier Henley <henley@adacore.com>"]
+maintainers-logins = ["ohenley"]
+licenses = "Apache-2.0"
+tags = ["tui", "terminal", "binding"]
+
+project-files = ["tuibox.gpr"]
