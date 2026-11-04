@@ -143,9 +143,8 @@ package Boxflex.Flex with SPARK_Mode is
    --    6. Align / Self along the cross axis, Lines across lines,
    --    7. write positions.
    --
-   --  The seed body is a PLACEHOLDER: it packs items one after the
-   --  other at their hypothetical main size, no grow, no shrink, no
-   --  wrap, Flex_Start everywhere. Replacing it is the project.
+   --  Implemented so far: steps 1, 3, 4, 5 and 6 (single line) and 7.
+   --  Still missing: wrap, align-content and reversed directions.
 
    ---------------------------------------------------------------------
    --  Pieces, exposed so they can be tested and proved one at a time
@@ -181,5 +180,26 @@ package Boxflex.Flex with SPARK_Mode is
    --  Step 2. Breaks at the first item that no longer fits C.Main. A
    --  line always takes at least one item, so an item wider than the
    --  container overflows its own line instead of opening an empty one.
+
+   procedure Distribute_Grow (C : Container; Items : in out Item_Array)
+     with
+       Pre  => Items'Length <= Max_Nodes,
+       Post => (for all K in Items'Range =>
+                  Inputs_Unchanged (Items'Old (K), Items (K))
+                  and then Items (K).Main >= Items'Old (K).Main);
+   --  Step 3, positive free space only, for a single line. Expects each
+   --  item's Main to already hold its hypothetical main size. Shares the
+   --  space left on the line among the items in proportion to Grow, and
+   --  hands out the leftover 1/256 px units one at a time, first item
+   --  first, so the line is filled exactly. Does nothing when there is no
+   --  free space or no item has Grow > 0. Max_Main is not applied yet.
+
+   procedure Distribute_Shrink (C : Container; Items : in out Item_Array)
+     with Pre => Items'Length <= Max_Nodes;
+   --  Step 3, negative free space, for a single line. When the items
+   --  overflow C.Main, each one gives up overflow * (Shrink * Main) /
+   --  (sum of Shrink * Main). An item that would go below Min_Main is
+   --  frozen at Min_Main and the rest is shared again. Leftover 1/256 px
+   --  steps come off one at a time, first item first.
 
 end Boxflex.Flex;

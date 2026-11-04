@@ -140,7 +140,7 @@ again; at 256 nodes that is nothing.
 `Form_Lines` (step 2) and `Hypothetical_Main` (step 1) are already
 implemented and tested; they are the shape the rest should take: small,
 exposed, contract-carrying, testable alone. Write step 3 for `No_Wrap`
-first and make the showcase match the browser. Then stretch, then
+first and check the showcase against the HTML reference. Then stretch, then
 justify, then wrap, then reversed directions. Each step is a pull
 request with a reference HTML and a test.
 

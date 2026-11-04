@@ -2,7 +2,7 @@ name = "boxflex"
 description = "Fixed-point flexbox layout engine with proven geometry"
 
 version = "0.1.0-dev"
-authors = ["Olivier Henley"]
+authors = ["Olivier Henley", "Cody Cloteaux"]
 maintainers = ["Olivier Henley <henley@adacore.com>"]
 maintainers-logins = ["ohenley"]
 licenses = "Apache-2.0"

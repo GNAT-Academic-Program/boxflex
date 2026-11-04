@@ -85,10 +85,8 @@ root (column, padding 8, gap 8)
 ```
 
 `showcase/reference.html` is the same tree in real CSS. Open it in a
-browser. With the placeholder engine the buttons and the sidebar are
-already where CSS puts them; `grow` and `stretch` are not. **When
-`showcase.svg` matches the browser, milestone 1 is done.** Then wrap,
-then reversed directions, then percentages against content boxes, then
+browser as a visual reference for the supported layout features.
+Further work includes wrap, reversed directions, percentages against content boxes, and
 the bottom-up pass so auto-sized containers hug their children, each
 with a reference HTML and a test.
 

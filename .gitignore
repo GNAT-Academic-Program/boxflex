@@ -7,3 +7,5 @@ config/
 *.ali
 gnatprove/
 showcase/showcase.svg
+.DS_Store
+showcase/.DS_Store
