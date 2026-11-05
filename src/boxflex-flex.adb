@@ -4,11 +4,25 @@ package body Boxflex.Flex with SPARK_Mode is
    --  Coord'Small in a wide integer instead.
    type Units is range -2 ** 62 .. 2 ** 62 - 1;
 
+   Units_Per_Pixel : constant Units :=
+      Units (1.0 / Coord'Small);
+   --  Number of units per pixel coordinate
+
    function To_Units (L : Length) return Units is
-     (Units (Long_Long_Integer'Integer_Value (L)));
+     (Units (L / Coord'(Coord'Small)));
+   --  Converts from Length in pixels to absolute Units
+
+   function Whole_Pixels (U : Units) return Long_Long_Integer is
+      (Long_Long_Integer (U / Units_Per_Pixel));
+   --  Extracts whole pixels from the total Units
+
+   function Fractional_Pixels (U : Units) return Integer is
+      (Integer (U rem Units_Per_Pixel));
+   --  Extracts the fractional pixels from the total Units
 
    function Clamp (V, Lo, Hi : Length) return Length is
-     (if V < Lo then Lo elsif Hi >= Lo and then V > Hi then Hi else V);
+      (Length'Max (Lo, Length'Min (V, Hi)));
+   --  Clamps values within a range, prioritizing the lower bound Lo
 
    -----------------------
    -- Hypothetical_Main --
@@ -76,8 +90,18 @@ package body Boxflex.Flex with SPARK_Mode is
       --  so a position of at most Length'Last (as a Coord) is safe.
 
       function Pos (U : Units) return Coord is
-        (if U > Max_U then Max_Pos else Coord'Fixed_Value (Long_Long_Integer (U)))
-        with Pre => U >= 0;
+         (if U >= Max_U then Max_Pos else
+            Coord (Whole_Pixels (U)) + Coord'(Coord'Small) * Fractional_Pixels (U))
+         with
+            Pre => U >= 0,
+            Post =>
+               Pos'Result >= 0.0
+               and then Pos'Result <= Max_Pos
+               and then
+               (if U < Max_U then
+                  To_Units (Pos'Result) = U
+               else
+                  Pos'Result = Max_Pos);
       --  Units to Coord, saturating at Max_Pos.
 
    begin

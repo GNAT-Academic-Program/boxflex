@@ -115,6 +115,17 @@ procedure Tests is
       Check ("resolve: packed",     It (2).Pos_Main = 55.0);
       Check ("resolve: in range",   Placed_In_Range (It (1)) and Placed_In_Range (It (2)));
 
+      --  Testing of fractional units
+      It (1) := 
+         (Basis_Definite => False,
+         Content_Main => 50.0,
+         Margin_Main_Start => 2.25,
+         Margin_Main_End => 2.75,
+         others => <>);
+      
+      Resolve (C, It);
+      Check ("resolve: fractional sizing", It (1).Main = 50.0 and then It (2).Main = 80.0);
+      Check ("resolve: fractional margin", It (1).Pos_Main = 2.25 and then It (2).Pos_Main = 55.0);
       --  pending, once grow is implemented:
       --  It (1).Grow := 1.0; It (2).Grow := 1.0; It (2).Max_Main := Length'Last;
       --  Resolve (C, It);
