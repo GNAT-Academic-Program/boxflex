@@ -381,6 +381,146 @@ procedure Tests is
               and Contains (Layout_Of (T, R), Layout_Of (T, B)));
    end Test_Layout;
 
+   procedure Test_Auto_Size_Edges is
+      T : Layout_Tree;
+      S : Flex_Style;
+begin
+   --  1. Grow starts from the hugged size: 150 px free, 75 each
+   declare
+      Root, A, LA, B, LB : Node_Id;
+   begin
+      S := Default_Style;
+      S.Direction := Row;
+      Insert (T, No_Node, S, Root);
+
+      S := Default_Style;
+      S.Grow := 1.0;
+      Insert (T, Root, S, A);
+      S := Default_Style;
+      S.Width := Px (100.0);
+      S.Height := Px (20.0);
+      Insert (T, A, S, LA);
+
+      S := Default_Style;
+      S.Grow := 1.0;
+      Insert (T, Root, S, B);
+      S := Default_Style;
+      S.Width := Px (50.0);
+      S.Height := Px (20.0);
+      Insert (T, B, S, LB);
+
+      Boxflex.Layout_Plain.Compute (T, (Width => 300.0, Height => 100.0));
+      Check ("auto: grow starts from the hugged size",
+             Layout_Of (T, A) = Make (0.0, 0.0, 175.0, 100.0)
+             and then Layout_Of (T, B) = Make (175.0, 0.0, 125.0, 100.0)
+             and then Placed (Layout_Of (T, LA))
+             and then Placed (Layout_Of (T, LB)));
+   end;
+
+   --  2. A fixed width wins over the hugged width; the height hugs
+   declare
+      Root, Box, Leaf : Node_Id;
+   begin
+      Clear (T);
+      S := Default_Style;
+      S.Direction := Column;
+      S.Align := Flex_Start;
+      Insert (T, No_Node, S, Root);
+
+      S := Default_Style;
+      S.Direction := Row;
+      S.Width := Px (200.0);
+      S.Padding := Uniform (2.0);
+      Insert (T, Root, S, Box);
+
+      S := Default_Style;
+      S.Width := Px (50.0);
+      S.Height := Px (30.0);
+      Insert (T, Box, S, Leaf);
+
+      Boxflex.Layout_Plain.Compute (T, (Width => 400.0, Height => 300.0));
+      Check ("auto: fixed width wins, height hugs",
+             Layout_Of (T, Box) = Make (0.0, 0.0, 200.0, 34.0)
+             and then Layout_Of (T, Leaf) = Make (2.0, 2.0, 50.0, 30.0));
+   end;
+
+   --  3. Guard: a container with no children is measured like a leaf
+   declare
+      Root, E : Node_Id;
+   begin
+      Clear (T);
+      S := Default_Style;
+      S.Direction := Row;
+      S.Align := Flex_Start;
+      Insert (T, No_Node, S, Root);
+
+      Insert (T, Root, Default_Style, E);
+
+      Boxflex.Layout_Plain.Compute (T, (Width => 400.0, Height => 300.0));
+      Check ("auto: empty container stays zero",
+             Layout_Of (T, E) = Make (0.0, 0.0, 0.0, 0.0));
+   end;
+
+   --  4. Margins count: 3 + 50 + 3 by 3 + 20 + 3
+   declare
+      Root, Box, Leaf : Node_Id;
+   begin
+      Clear (T);
+      S := Default_Style;
+      S.Direction := Column;
+      S.Align := Flex_Start;
+      Insert (T, No_Node, S, Root);
+
+      S := Default_Style;
+      S.Direction := Row;
+      Insert (T, Root, S, Box);
+
+      S := Default_Style;
+      S.Width := Px (50.0);
+      S.Height := Px (20.0);
+      S.Margin := Uniform (3.0);
+      Insert (T, Box, S, Leaf);
+
+      Boxflex.Layout_Plain.Compute (T, (Width => 400.0, Height => 300.0));
+      Check ("auto: child margins count toward the hugged size",
+             Layout_Of (T, Box) = Make (0.0, 0.0, 56.0, 26.0)
+             and then Layout_Of (T, Leaf) = Make (3.0, 3.0, 50.0, 20.0));
+   end;
+
+   --  5. A column hugs its height with gaps: 10 + 5 + 10 + 5 + 10
+   declare
+      Root, Col, C1, C2, C3 : Node_Id;
+   begin
+      Clear (T);
+      S := Default_Style;
+      S.Direction := Row;
+      S.Align := Flex_Start;
+      Insert (T, No_Node, S, Root);
+
+      S := Default_Style;
+      S.Direction := Column;
+      S.Gap := 5.0;
+      Insert (T, Root, S, Col);
+
+      S := Default_Style;
+      S.Height := Px (10.0);
+      S.Width := Px (40.0);
+      Insert (T, Col, S, C1);
+      S.Width := Px (60.0);
+      Insert (T, Col, S, C2);
+      S.Width := Px (20.0);
+      Insert (T, Col, S, C3);
+
+      Boxflex.Layout_Plain.Compute (T, (Width => 400.0, Height => 300.0));
+      Check ("auto: column hugs its height, gaps included",
+             Layout_Of (T, Col) = Make (0.0, 0.0, 60.0, 40.0)
+             and then Layout_Of (T, C1) = Make (0.0, 0.0, 40.0, 10.0)
+             and then Layout_Of (T, C2) = Make (0.0, 15.0, 60.0, 10.0)
+             and then Layout_Of (T, C3) = Make (0.0, 30.0, 20.0, 10.0));
+   end;
+end Test_Auto_Size_Edges;
+
+
    ---------------------------------------------------------------------
    --  Rules: expected values are worked out from the engine's rules in
    --  whole 1/256 px steps, never copied from a browser. The browser
@@ -907,6 +1047,7 @@ begin
    Test_Justify_Rounding;
    Test_Shrink_Rounding;
    Test_Auto_Size;
+   Test_Auto_Size_Edges;
 
    New_Line;
    if Failures = 0 then
