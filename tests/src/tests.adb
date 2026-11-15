@@ -715,6 +715,93 @@ procedure Tests is
              + To_Steps (K (3).Main) = To_Steps (200.0));
    end Test_Shrink_Rounding;
 
+procedure Test_Auto_Size is
+   T : Layout_Tree;
+   S : Flex_Style;
+begin
+   --  An auto-sized row hugs its children: 5 + 50 + 10 + 70 + 5 wide,
+   --  5 + 30 + 5 tall. Flex_Start on the root so nothing stretches.
+   declare
+      Root, Bar, L1, L2 : Node_Id;
+   begin
+      S := Default_Style;
+      S.Direction := Column;
+      S.Align := Flex_Start;
+      Insert (T, No_Node, S, Root);
+
+      S := Default_Style;
+      S.Direction := Row;
+      S.Gap := 10.0;
+      S.Padding := Uniform (5.0);
+      Insert (T, Root, S, Bar);
+
+      S := Default_Style;
+      S.Width := Px (50.0);
+      S.Height := Px (20.0);
+      Insert (T, Bar, S, L1);
+
+      S.Width := Px (70.0);
+      S.Height := Px (30.0);
+      Insert (T, Bar, S, L2);
+
+      Boxflex.Layout_Plain.Compute (T, (Width => 400.0, Height => 300.0));
+
+      Check ("auto: row hugs its children",
+             Layout_Of (T, Bar) = Make (0.0, 0.0, 140.0, 40.0));
+      Check ("auto: first child inside the padding",
+             Layout_Of (T, L1) = Make (5.0, 5.0, 50.0, 20.0));
+      Check ("auto: second child after the gap",
+             Layout_Of (T, L2) = Make (65.0, 5.0, 70.0, 30.0));
+   end;
+
+   --  Two levels: Inner is hugged first (bigger id), then Outer uses
+   --  Inner's size. Outer = 4 + max (76, 100) + 4 by 4 + 10 + 20 + 4.
+   declare
+      Root, Outer, Inner, I1, I2, Leaf : Node_Id;
+   begin
+      Clear (T);
+
+      S := Default_Style;
+      S.Direction := Row;
+      S.Align := Flex_Start;
+      Insert (T, No_Node, S, Root);
+
+      S := Default_Style;
+      S.Direction := Column;
+      S.Padding := Uniform (4.0);
+      Insert (T, Root, S, Outer);
+
+      S := Default_Style;
+      S.Direction := Row;
+      S.Gap := 6.0;
+      Insert (T, Outer, S, Inner);
+
+      S := Default_Style;
+      S.Width := Px (30.0);
+      S.Height := Px (10.0);
+      Insert (T, Inner, S, I1);
+
+      S.Width := Px (40.0);
+      Insert (T, Inner, S, I2);
+
+      S.Width := Px (100.0);
+      S.Height := Px (20.0);
+      Insert (T, Outer, S, Leaf);
+
+      Boxflex.Layout_Plain.Compute (T, (Width => 500.0, Height => 200.0));
+
+      Check ("auto: nested column hugs its widest child",
+             Layout_Of (T, Outer) = Make (0.0, 0.0, 108.0, 38.0));
+      Check ("auto: hugged row still stretches in its parent",
+             Layout_Of (T, Inner) = Make (4.0, 4.0, 100.0, 10.0));
+      Check ("auto: leaf below the hugged row",
+             Layout_Of (T, Leaf) = Make (4.0, 14.0, 100.0, 20.0));
+      Check ("auto: grandchildren placed inside the hugged row",
+             Layout_Of (T, I1) = Make (4.0, 4.0, 30.0, 10.0)
+             and then Layout_Of (T, I2) = Make (40.0, 4.0, 40.0, 10.0));
+   end;
+end Test_Auto_Size;
+
 begin
    Test_Geometry;
    Test_Tree;
@@ -725,6 +812,7 @@ begin
    Test_Edge_Cases;
    Test_Justify_Rounding;
    Test_Shrink_Rounding;
+   Test_Auto_Size;
 
    New_Line;
    if Failures = 0 then
