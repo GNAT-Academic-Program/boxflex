@@ -677,6 +677,99 @@ procedure Tests is
                 P (1).Main = 100.0 and then P (2).Main = 100.0);
       end;
    end Test_Edge_Cases;
+   procedure Test_Auto_Size_More is
+      T : Layout_Tree;
+      S : Flex_Style;
+   begin
+      --  1. Border counts like padding: 1 + 2 + 40 + 2 + 1 by 1 + 2 + 20 + 2 + 1
+      declare
+         Root, Box, Leaf : Node_Id;
+      begin
+         S := Default_Style;
+         S.Direction := Column;
+         S.Align := Flex_Start;
+         Insert (T, No_Node, S, Root);
+
+         S := Default_Style;
+         S.Direction := Row;
+         S.Border := Uniform (1.0);
+         S.Padding := Uniform (2.0);
+         Insert (T, Root, S, Box);
+
+         S := Default_Style;
+         S.Width := Px (40.0);
+         S.Height := Px (20.0);
+         Insert (T, Box, S, Leaf);
+
+         Boxflex.Layout_Plain.Compute (T, (Width => 400.0, Height => 300.0));
+         Check ("auto: border counts toward the hugged size",
+                Layout_Of (T, Box) = Make (0.0, 0.0, 46.0, 26.0)
+                and then Layout_Of (T, Leaf) = Make (3.0, 3.0, 40.0, 20.0));
+      end;
+
+      --  2. Center uses the hugged height: (300 - 50) / 2 = 125
+      declare
+         Root, Box, C1, C2 : Node_Id;
+      begin
+         Clear (T);
+         S := Default_Style;
+         S.Direction := Row;
+         S.Align := Center;
+         Insert (T, No_Node, S, Root);
+
+         S := Default_Style;
+         S.Direction := Column;
+         Insert (T, Root, S, Box);
+
+         S := Default_Style;
+         S.Width := Px (60.0);
+         S.Height := Px (20.0);
+         Insert (T, Box, S, C1);
+         S.Width := Px (40.0);
+         S.Height := Px (30.0);
+         Insert (T, Box, S, C2);
+
+         Boxflex.Layout_Plain.Compute (T, (Width => 400.0, Height => 300.0));
+         Check ("auto: hugged column is centered by its hugged height",
+                Layout_Of (T, Box) = Make (0.0, 125.0, 60.0, 50.0)
+                and then Layout_Of (T, C1) = Make (0.0, 125.0, 60.0, 20.0)
+                and then Layout_Of (T, C2) = Make (0.0, 145.0, 40.0, 30.0));
+      end;
+
+      --  3. Grow down a column starts from the hugged heights: 160 free, 80 each
+      declare
+         Root, A, LA, B, LB : Node_Id;
+      begin
+         Clear (T);
+         S := Default_Style;
+         S.Direction := Column;
+         Insert (T, No_Node, S, Root);
+
+         S := Default_Style;
+         S.Grow := 1.0;
+         Insert (T, Root, S, A);
+         S := Default_Style;
+         S.Width := Px (10.0);
+         S.Height := Px (100.0);
+         Insert (T, A, S, LA);
+
+         S := Default_Style;
+         S.Grow := 1.0;
+         Insert (T, Root, S, B);
+         S := Default_Style;
+         S.Width := Px (10.0);
+         S.Height := Px (40.0);
+         Insert (T, B, S, LB);
+
+         Boxflex.Layout_Plain.Compute (T, (Width => 400.0, Height => 300.0));
+         Check ("auto: grow in a column starts from the hugged heights",
+                Layout_Of (T, A) = Make (0.0, 0.0, 400.0, 180.0)
+                and then Layout_Of (T, B) = Make (0.0, 180.0, 400.0, 120.0)
+                and then Placed (Layout_Of (T, LA))
+                and then Placed (Layout_Of (T, LB)));
+      end;
+   end Test_Auto_Size_More;
+
 
    procedure Test_Justify_Rounding is
       use Boxflex.Flex;
@@ -809,6 +902,7 @@ begin
    Test_Layout;
    Test_Showcase;
    Test_Center_Rounding;
+   Test_Auto_Size_More;
    Test_Edge_Cases;
    Test_Justify_Rounding;
    Test_Shrink_Rounding;
