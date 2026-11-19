@@ -54,7 +54,8 @@ package body Boxflex.Flex with SPARK_Mode is
       for K in Items'Range loop
          pragma Loop_Invariant (Count <= K - Items'First);
          pragma Loop_Invariant (Count = 0 or else Lines (Count).Last = K - 1);
-         pragma Loop_Invariant (Used >= 0);
+         pragma Loop_Invariant (Used in 0 .. Units (K - Items'First) * 4 * 2 ** 30);
+         pragma Loop_Invariant (if C.Wrap = No_Wrap then Count <= 1);
 
          Outer := To_Units (Items (K).Margin_Main_Start)
                   + To_Units (Hypothetical_Main (Items (K)))
@@ -113,6 +114,7 @@ package body Boxflex.Flex with SPARK_Mode is
             (for all J in Items'Range =>
                Inputs_Unchanged (Items'Loop_Entry (J), Items (J))
                and then Items (J).Main >= Items'Loop_Entry (J).Main);
+         pragma Assert (Free in 1 .. 2 ** 30 and then Total_Grow >= 1);
          Share := Free * Grow_Units (Items (K).Grow) / Total_Grow;
          --  Never more than what is left, nor more than a Length holds.
          --  Neither cap changes the result for a real line.
@@ -314,10 +316,10 @@ package body Boxflex.Flex with SPARK_Mode is
       Gap    : constant Units := To_Units (C.Main_Gap);
       Max_U : constant Units := To_Units (Length'Last);
       --   Max_Pos = Coord'Last - Length'Last, and Length'Last = 2**22
-      --   so a position of at most Length'Last (as a Coord) is safe
+      --   so a position below Length'Last (as a Coord) is safe
 
       function Pos (U : Units) return Coord is
-         (if U > Max_U then Max_Pos else Coord_Unit * Integer (U))
+         (if U >= Max_U then Max_Pos else Coord_Unit * Integer (U))
          with Pre => U >= 0;
       --   Units to Coord, saturating at Max_Pos.
 
@@ -375,11 +377,12 @@ package body Boxflex.Flex with SPARK_Mode is
                   Cursor := Between;
             end case;
          end if;
+         pragma Assert (Cursor in 0 .. 2 ** 30 and then Between in 0 .. 2 ** 30);
       end;
 
       --  Step 7: place items one after the other along the main axis.
       for K in Items'Range loop
-         pragma Loop_Invariant (Cursor >= 0);
+         pragma Loop_Invariant (Cursor in 0 .. Units (K - Items'First + 1) * 5 * 2 ** 30);
          pragma Loop_Invariant
             (for all J in Items'First .. K - 1 => Placed_In_Range (Items (J)));
 
